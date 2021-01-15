@@ -6,6 +6,9 @@ import cv2
 import torch
 import torch.backends.cudnn as cudnn
 from numpy import random
+import requests
+
+import time
 
 from models.experimental import attempt_load
 from utils.datasets import LoadStreams, LoadImages
@@ -16,13 +19,16 @@ from utils.torch_utils import select_device, load_classifier, time_synchronized
 
 
 def detect(save_img=False):
-    source, weights, view_img, save_txt, imgsz = opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size
+    source, weights, view_img, save_txt, imgsz, send = opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size, opt.send
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
         ('rtsp://', 'rtmp://', 'http://'))
 
     # Directories
     save_dir = Path(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))  # increment run
     (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
+
+    # API
+    request_url = 'https://api.tester-site.nl/v1/scans'
 
     # Initialize
     set_logging()
@@ -100,6 +106,17 @@ def detect(save_img=False):
 
                 # Write results
                 for *xyxy, conf, cls in reversed(det):
+                    if send:
+                        timestamp = time.time()
+                        payload = {
+                            "timestamp": timestamp,
+                            "measurements": {
+                                "car": 1,
+                            } 
+                        }
+                        r = requests.post(request_url, json= payload)
+                        print(r.status_code)
+
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
                         line = (cls, *xywh, conf) if opt.save_conf else (cls, *xywh)  # label format
@@ -161,6 +178,7 @@ if __name__ == '__main__':
     parser.add_argument('--project', default='runs/detect', help='save results to project/name')
     parser.add_argument('--name', default='exp', help='save results to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
+    parser.add_argument('--send', action='store_true', help='send request of data')
     opt = parser.parse_args()
     print(opt)
 
