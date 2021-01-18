@@ -17,6 +17,7 @@ from utils.general import check_img_size, non_max_suppression, apply_classifier,
 from utils.plots import plot_one_box
 from utils.torch_utils import select_device, load_classifier, time_synchronized
 
+request_url = 'https://api.tester-site.nl/v1/scans'
 
 def detect(save_img=False):
     source, weights, view_img, save_txt, imgsz, send = opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size, opt.send
@@ -28,7 +29,6 @@ def detect(save_img=False):
     (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
 
     # API
-    request_url = 'https://api.tester-site.nl/v1/scans'
 
     # Initialize
     set_logging()
@@ -65,7 +65,16 @@ def detect(save_img=False):
     t0 = time.time()
     img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
     _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
+
+    # Ammmount of detected cars
+    detected_cars = 0
+    timestamp = time.time()
+    photos_scanned = 0
+
     for path, img, im0s, vid_cap in dataset:
+        # time.sleep(0.245)
+        photos_scanned += 1
+        
         img = torch.from_numpy(img).to(device)
         img = img.half() if half else img.float()  # uint8 to fp16/32
         img /= 255.0  # 0 - 255 to 0.0 - 1.0
@@ -106,16 +115,7 @@ def detect(save_img=False):
 
                 # Write results
                 for *xyxy, conf, cls in reversed(det):
-                    if send:
-                        timestamp = time.time()
-                        payload = {
-                            "timestamp": timestamp,
-                            "measurements": {
-                                "car": 1,
-                            } 
-                        }
-                        r = requests.post(request_url, json= payload)
-                        print(r.status_code)
+                    detected_cars += 1
 
                     if save_txt:  # Write to file
                         xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
@@ -153,12 +153,31 @@ def detect(save_img=False):
                         vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*fourcc), fps, (w, h))
                     vid_writer.write(im0)
 
+            if send and photos_scanned == 60:
+                sendData(timestamp, detected_cars)
+
+                # reset vars
+                timestamp = time.time()
+                detected_cars = 0
+                photos_scanned = 0
+
     if save_txt or save_img:
         s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
         print(f"Results saved to {save_dir}{s}")
 
     print('Done. (%.3fs)' % (time.time() - t0))
 
+
+def sendData(timestamp, detected_cars): 
+    payload = {
+        "timestamp": timestamp,
+        "measurements": {
+            "car": detected_cars,
+        } 
+    }
+
+    request = requests.post(request_url, json= payload)
+    print(request)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
