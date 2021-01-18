@@ -31,12 +31,16 @@ def execute_detect(current_folder):
     )
 
 
-def read_then_parse_then_save_if_enough_detect_send_and_delete():
+def read_then_parse_then_save_if_enough_detect_send_and_delete(print_logs=False):
+    def pprint(string):
+        if print_logs:
+            print(string)
+
     index = 0
     current_folder = update_current_folder()
     while True:
         sparse_bytes = queue.get(block=True, timeout=None)  # Blocking
-        print(f"{len(sparse_bytes)}: {sparse_bytes}")
+        pprint(f"{len(sparse_bytes)}: {sparse_bytes}")
         if sparse_bytes is None:
             return
 
@@ -51,7 +55,7 @@ def read_then_parse_then_save_if_enough_detect_send_and_delete():
         try:
             image_array = sparse.csr_matrix.toarray(pickle.loads(sparse_bytes))
         except pickle.UnpicklingError as e:
-            print(f'[{e.__class__.__name__}] Occurred. \n\tLength: {len(sparse_bytes)}\n\tMessage:{sparse_bytes}')
+            pprint(f'[{e.__class__.__name__}] Occurred. \n\tLength: {len(sparse_bytes)}\n\tMessage:{sparse_bytes}')
             continue
         new_image: Image = PIL.Image.fromarray(image_array)
         new_image.save(f"{dir_path}\\{current_folder}\\{index}.jpg")
@@ -94,7 +98,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__)) + relative_temp_images_fo
 max_index: int = 80
 queue = Queue()
 
-parse_thread = threading.Thread(target=read_then_parse_then_save_if_enough_detect_send_and_delete)
+parse_thread = threading.Thread(target=read_then_parse_then_save_if_enough_detect_send_and_delete, args=(True,))
 parse_thread.start()
 
 while True:
