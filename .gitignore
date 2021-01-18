@@ -132,3 +132,5 @@ dmypy.json
 .vscode
 *.jpg
 *.cache
+
+yolov5/.idea/workspace.xml
