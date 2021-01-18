@@ -18,6 +18,7 @@ import torch
 from PIL import Image, ExifTags
 from torch.utils.data import Dataset
 from tqdm import tqdm
+from tkinter import Tcl
 
 from utils.general import xyxy2xywh, xywh2xyxy
 from utils.torch_utils import torch_distributed_zero_first
@@ -124,7 +125,8 @@ class LoadImages:  # for inference
         if '*' in p:
             files = sorted(glob.glob(p, recursive=True))  # glob
         elif os.path.isdir(p):
-            files = sorted(glob.glob(os.path.join(p, '*.*')))  # dir
+            files = Tcl().call('lsort', '-dict', glob.glob(os.path.join(p, '*.*')))
+
         elif os.path.isfile(p):
             files = [p]  # files
         else:
