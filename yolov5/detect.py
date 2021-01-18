@@ -19,6 +19,7 @@ from utils.torch_utils import select_device, load_classifier, time_synchronized
 
 request_url = 'https://api.tester-site.nl/v1/scans'
 
+
 def detect(save_img=False):
     source, weights, view_img, save_txt, imgsz, send = opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size, opt.send
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
@@ -27,8 +28,6 @@ def detect(save_img=False):
     # Directories
     save_dir = Path(increment_path(Path(opt.project) / opt.name, exist_ok=opt.exist_ok))  # increment run
     (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
-
-    # API
 
     # Initialize
     set_logging()
@@ -54,7 +53,7 @@ def detect(save_img=False):
         cudnn.benchmark = True  # set True to speed up constant image size inference
         dataset = LoadStreams(source, img_size=imgsz)
     else:
-        save_img = True
+        save_img = False
         dataset = LoadImages(source, img_size=imgsz)
 
     # Get names and colors
@@ -66,7 +65,7 @@ def detect(save_img=False):
     img = torch.zeros((1, 3, imgsz, imgsz), device=device)  # init img
     _ = model(img.half() if half else img) if device.type != 'cpu' else None  # run once
 
-    # Ammmount of detected cars
+    # Amount of detected cars
     detected_cars = 0
     timestamp = time.time()
     photos_scanned = 0
@@ -74,7 +73,7 @@ def detect(save_img=False):
     for path, img, im0s, vid_cap in dataset:
         # time.sleep(0.245)
         photos_scanned += 1
-        
+
         img = torch.from_numpy(img).to(device)
         img = img.half() if half else img.float()  # uint8 to fp16/32
         img /= 255.0  # 0 - 255 to 0.0 - 1.0
@@ -178,6 +177,7 @@ def sendData(timestamp, detected_cars):
 
     request = requests.post(request_url, json= payload)
     print(request)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
