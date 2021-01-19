@@ -68,11 +68,9 @@ def detect(save_img=False):
     # Amount of detected cars
     detected_cars = 0
     timestamp = time.time()
-    photos_scanned = 0
 
     for path, img, im0s, vid_cap in dataset:
         # time.sleep(0.245)
-        photos_scanned += 1
 
         img = torch.from_numpy(img).to(device)
         img = img.half() if half else img.float()  # uint8 to fp16/32
@@ -152,22 +150,17 @@ def detect(save_img=False):
                         vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*fourcc), fps, (w, h))
                     vid_writer.write(im0)
 
-            if send and photos_scanned == 60:
-                sendData(timestamp, detected_cars)
-
-                # reset vars
-                timestamp = time.time()
-                detected_cars = 0
-                photos_scanned = 0
-
     if save_txt or save_img:
         s = f"\n{len(list(save_dir.glob('labels/*.txt')))} labels saved to {save_dir / 'labels'}" if save_txt else ''
         print(f"Results saved to {save_dir}{s}")
 
+    if send:
+        send_data(timestamp, detected_cars)
+
     print('Done. (%.3fs)' % (time.time() - t0))
 
 
-def sendData(timestamp, detected_cars): 
+def send_data(timestamp, detected_cars): 
     payload = {
         "timestamp": timestamp,
         "measurements": {
