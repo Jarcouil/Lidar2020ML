@@ -134,3 +134,5 @@ dmypy.json
 *.cache
 
 yolov5/.idea/workspace.xml
+
+yolov5/.idea/
