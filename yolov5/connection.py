@@ -74,7 +74,8 @@ def receive_all(sock) -> bytes:
     while True:
         part = sock.recv(buff_size)
         data += part
-        if len(part) < buff_size:
+        # if len(part) < buff_size:
+        if len(part) == 0:
             break  # either 0 or end of data
     return data
 
