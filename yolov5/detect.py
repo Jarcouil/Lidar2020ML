@@ -20,8 +20,8 @@ from utils.torch_utils import select_device, load_classifier, time_synchronized
 request_url = 'https://api.tester-site.nl/v1/scans'
 
 
-def detect(save_img=False):
-    source, weights, view_img, save_txt, imgsz, send = opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size, opt.send
+def detect():
+    source, weights, view_img, save_txt, imgsz, send, save_img = opt.source, opt.weights, opt.view_img, opt.save_txt, opt.img_size, opt.send, opt.save_img
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
         ('rtsp://', 'rtmp://', 'http://'))
 
@@ -53,7 +53,6 @@ def detect(save_img=False):
         cudnn.benchmark = True  # set True to speed up constant image size inference
         dataset = LoadStreams(source, img_size=imgsz)
     else:
-        save_img = False
         dataset = LoadImages(source, img_size=imgsz)
 
     # Get names and colors
@@ -191,6 +190,7 @@ if __name__ == '__main__':
     parser.add_argument('--name', default='exp', help='save results to project/name')
     parser.add_argument('--exist-ok', action='store_true', help='existing project/name ok, do not increment')
     parser.add_argument('--send', action='store_true', help='send request of data')
+    parser.add_argument('--save-img', action='store_true', help='save image of result')
     opt = parser.parse_args()
     print(opt)
 
